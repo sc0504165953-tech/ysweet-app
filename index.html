@@ -1328,8 +1328,11 @@ function rShop(){
   if(!Object.keys(tot).length){el.innerHTML='<div style="padding:1rem;color:var(--muted);font-size:13px;">אין הזמנות פעילות</div>';return;}
   el.innerHTML=Object.entries(tot).sort((a,b)=>a[1].name.localeCompare(b[1].name,'he')).map(([,v])=>`
     <div class="shi">
-      <div style="flex:1;"><div style="font-weight:500;">${v.name}</div><div class="shi-src">${[...v.sources].join(', ')}</div></div>
-      <div class="shi-qty">${fmtQ(v.qty,v.unit)}</div>
+      <div style="flex:1;">
+        <div style="font-weight:700;font-size:15px;color:var(--text);">${v.name}</div>
+        <div class="shi-src" style="font-size:11px;color:var(--muted);">📦 ${[...v.sources].join(' · ')}</div>
+      </div>
+      <div class="shi-qty" style="font-size:15px;font-weight:700;">${fmtQ(v.qty,v.unit)}</div>
     </div>`).join('');
 }
 function rChkList(type){
@@ -1536,6 +1539,16 @@ function showEditItem(id){
   </div>`);
 }
 function aIR(){const d=document.createElement('div');d.className='ing-row';d.innerHTML=`<input type="number" step="0.1" class="iq" placeholder="כמות"><input type="text" class="iu" placeholder="יחידה"><input type="text" placeholder="שם"><button class="di" onclick="this.parentElement.remove()">×</button>`;document.getElementById('ie').appendChild(d);}
+function syncIngByName(updatedItem) {
+  // מצא פריטים עם אותו שם בתפריט השני וסנכרן רכיבים
+  M.forEach(item => {
+    if (item.id !== updatedItem.id && item.name === updatedItem.name) {
+      item.ing = JSON.parse(JSON.stringify(updatedItem.ing));
+      fbSave('menu', item.id, item);
+    }
+  });
+}
+
 function sEdit(id){
   const item=M.find(m=>m.id===id);if(!item)return;
   item.name=document.getElementById('ei-n').value.trim()||item.name;
@@ -1549,7 +1562,8 @@ function sEdit(id){
     if(n)item.ing.push({n,q,u});
   });
   fbSave('menu',item.id,item);
-  cMod();rMP();toast('✦ הפריט עודכן');
+  syncIngByName(item);
+  cMod();rMP();toast('✦ הפריט עודכן — הרכיבים סונכרנו בשני התפריטים');
 }
 function dItem(id){
   if(!confirm('למחוק פריט זה מהתפריט?'))return;
@@ -1707,22 +1721,15 @@ function editOrd(id){
 
 function sCnf(id){
   const o=ords.find(o=>String(o.id)===String(id));if(!o)return;
-  const lines=o.items.map(oi=>{
-    const m=M.find(m=>m.id===oi.menuId);if(!m)return'';
-    let lbl=m.name;const v=oi.variantId&&m.variants?m.variants.find(v=>v.id===oi.variantId):null;if(v)lbl+=` — ${v.name}`;
-    let row=`• ${lbl}: ${oi.qty} ${m.unit}`;
-    if(oi.removedIng?.length)row+=` (ללא ${oi.removedIng.join(', ')})`;
-    if(oi.note)row+=` — ${oi.note}`;
-    return row;
-  }).filter(Boolean).join('\n');
-  const svcL=SERVICES_DEF.filter(s=>o.services?.[s.id]?.active).map(s=>`• ${s.icon} ${s.label}: ₪${o.services[s.id].price||0}`).join('\n');
+  const confirmLink = `${BASE_URL}/confirm.html?id=${o.id}`;
   const ph=(o.clientPhone||'').replace(/[-\s]/g,'');
-  const msg=`שלום ${o.clientName}!\n\n✦ אישור הזמנה לתאריך ${o.eventDate}${o.eventTime?' ⏰ '+o.eventTime:''}\n${o.eventLocation?'📍 '+o.eventLocation:''}\n\n${lines}${svcL?'\n\nשירותי עריכה:\n'+svcL:''}\n${o.delivery?.price>0?'\n🚚 משלוח: ₪'+o.delivery.price+(o.delivery.note?' — '+o.delivery.note:''):'\n🚚 משלוח: חינם'}\n\nסה"כ: ₪${oT(o).toLocaleString()}\n\nנא לאשר.\nY Sweet — יעל כהן 050-4940803`;
+  const msg=`שלום ${o.clientName}! 🌟\n\n✦ הזמנתך אושרה על ידי Y Sweet מהדרין!\n\n📅 תאריך: ${o.eventDate}${o.eventTime?' ⏰ '+o.eventTime:''}\n${o.eventLocation?'📍 '+o.eventLocation+'\n':''}\n💰 סה"כ לתשלום: ₪${oT(o).toLocaleString()}\n\n👇 לצפייה בפרטי ההזמנה המלאים ואישור:\n${confirmLink}\n\nY Sweet מהדרין | יעל כהן | 050-4940803`;
   window.open(`https://wa.me/${ph}?text=${encodeURIComponent(msg)}`,'_blank');
 }
 function sCML(id){
   const o=ords.find(o=>String(o.id)===String(id));if(!o)return;
   if(!o.clientEmail){alert('לא הוזנה כתובת אימייל ללקוח זה');return;}
+  const confirmLink = `${BASE_URL}/confirm.html?id=${o.id}`;
   const lines=o.items.map(oi=>{
     const m=M.find(m=>m.id===oi.menuId);if(!m)return'';
     let lbl=m.name;
@@ -1759,7 +1766,9 @@ ${delL}`,
   ].filter(l=>l!==null).join('\n');
 
   // בדוק אורך — אם ארוך מדי קצר
-  const finalBody = body.length > 1800 ? body.slice(0,1800) + '...' : body;
+  const confirmSection = `\n\n👇 לצפייה בפרטי ההזמנה המלאים ואישור:\n${confirmLink}`;
+  const bodyWithLink = body + confirmSection;
+  const finalBody = bodyWithLink.length > 1800 ? bodyWithLink.slice(0,1800) + '...' : bodyWithLink;
   window.open(
     `mailto:${o.clientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(finalBody)}`,
     '_blank'

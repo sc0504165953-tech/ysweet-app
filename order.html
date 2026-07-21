@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Y Sweet — הזמנה</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,700&family=Assistant:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;direction:rtl;}
+:root{--gold:#C9A84C;--gold2:#E8C97A;--gold3:#F5E6C0;--gold4:#8B6914;--dark:#1A1208;--bg:#FAFAF8;--bg2:#F4F0E8;--text:#1C1C1C;--muted:#6B6560;--border:rgba(0,0,0,0.1);--rad:14px;--radsm:8px;--serif:'Playfair Display',Georgia,serif;--body:'Assistant',sans-serif;}
+body{font-family:var(--body);background:var(--bg);color:var(--text);}
+.app{max-width:680px;margin:0 auto;padding-bottom:40px;}
+.header{background:linear-gradient(160deg,#1A1208,#2C1F08,#1e1609);border-radius:0 0 var(--rad) var(--rad);margin-bottom:20px;box-shadow:0 4px 24px rgba(0,0,0,0.25);}
+.hi{display:flex;align-items:center;gap:14px;padding:16px 20px;}
+.htext{flex:1;}
+.hbrand{font-family:var(--serif);font-size:20px;font-style:italic;color:var(--gold2);}
+.htagline{font-size:11px;color:var(--gold);margin-top:1px;}
+.gold-line{height:2px;background:linear-gradient(90deg,transparent,var(--gold),var(--gold2),var(--gold),transparent);}
+.card{background:#fff;border:0.5px solid var(--border);border-radius:var(--rad);padding:16px 20px;margin:0 12px 14px;box-shadow:0 2px 8px rgba(0,0,0,0.04);}
+.stitle{font-family:var(--serif);font-style:italic;font-size:15px;color:var(--gold4);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.stitle::after{content:'';flex:1;height:0.5px;background:linear-gradient(90deg,var(--gold),transparent);}
+.btn{padding:10px 20px;border-radius:var(--radsm);border:none;cursor:pointer;font-size:14px;font-weight:600;font-family:var(--body);transition:all 0.15s;}
+.btng{background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--dark);}
+.btng:hover{opacity:0.9;}
+.btns{padding:4px 10px;font-size:12px;border:0.5px solid var(--border);background:#fff;color:var(--text);}
+.mic{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radsm);padding:11px 13px;margin-bottom:8px;}
+.mic.hq{border-color:var(--gold);background:var(--gold3);}
+.min{font-size:13px;font-weight:500;}
+.mip{font-size:12px;color:var(--gold4);font-weight:600;}
+.mii{font-size:11px;color:var(--muted);margin-top:2px;}
+.ctag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:8px;background:var(--gold3);color:var(--gold4);margin-bottom:2px;}
+.qc{display:flex;align-items:center;gap:6px;}
+.qb{width:27px;height:27px;border:1px solid var(--gold);border-radius:50%;background:transparent;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;color:var(--gold4);}
+.qb:hover{background:var(--gold3);}
+.sbox{background:linear-gradient(135deg,#1A1208,#2C1F08);border-radius:var(--radsm);padding:14px 18px;margin-top:8px;}
+.srow{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;color:var(--gold3);}
+.stot{font-size:16px;font-weight:600;color:var(--gold2);border-top:0.5px solid var(--gold);margin-top:8px;padding-top:8px;font-family:var(--serif);}
+.tab-row{display:flex;gap:0;background:var(--bg2);border-radius:var(--radsm);padding:3px;border:0.5px solid var(--border);margin-bottom:12px;}
+.tab-btn{flex:1;padding:8px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--body);transition:all 0.15s;background:transparent;color:var(--muted);}
+.tab-btn.active{background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--dark);font-weight:600;}
+.cfilt{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.cfilt-btn{padding:5px 12px;border-radius:20px;border:0.5px solid var(--border);background:#fff;cursor:pointer;font-size:12px;font-family:var(--body);color:var(--muted);}
+.cfilt-btn.active{background:var(--gold3);color:var(--gold4);border-color:var(--gold);font-weight:600;}
+.success-box{text-align:center;padding:3rem 1rem;}
+.loading{text-align:center;padding:3rem;color:var(--muted);font-family:var(--serif);font-style:italic;}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="header">
+  <div class="hi">
+    <svg width="60" height="60" viewBox="0 0 60 60">
+      <defs>
+        <linearGradient id="rg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#E8C97A"/><stop offset="50%" stop-color="#C9A84C"/><stop offset="100%" stop-color="#8B6914"/>
+        </linearGradient>
+        <radialGradient id="bg" cx="45%" cy="38%" r="65%">
+          <stop offset="0%" stop-color="#FFFDF5"/><stop offset="100%" stop-color="#F5E6C0"/>
+        </radialGradient>
+        <linearGradient id="yg" x1="0%" y1="0%" x2="60%" y2="100%">
+          <stop offset="0%" stop-color="#8B6914"/><stop offset="50%" stop-color="#C9A84C"/><stop offset="100%" stop-color="#7A5C10"/>
+        </linearGradient>
+      </defs>
+      <circle cx="30" cy="30" r="29" fill="url(#rg)"/>
+      <circle cx="30" cy="30" r="25" fill="url(#bg)"/>
+      <text x="30" y="40" text-anchor="middle" font-family="Georgia,serif" font-size="34" font-weight="700" font-style="italic" fill="url(#yg)">Y</text>
+      <text x="30" y="49" text-anchor="middle" font-family="Georgia,serif" font-size="6" font-style="italic" letter-spacing="2" fill="#8B6914">sweet</text>
+    </svg>
+    <div class="htext">
+      <div class="hbrand">Y Sweet מהדרין</div>
+      <div class="htagline">בחרו מהתפריט ושלחו הזמנה</div>
+    </div>
+  </div>
+  <div class="gold-line"></div>
+</div>
+
+<div id="main-content">
+  <div class="loading">טוען תפריט...</div>
+</div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://xbjyzcdxfsjnqjqjwsxs.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_SSlTKx-prnpBZ7KA56Fxdg_QOfNfr-z';
+
+async function sbReq(method, table, body=null, filter='') {
+  const url = `${SUPABASE_URL}/rest/v1/${table}${filter}`;
+  const res = await fetch(url, {
+    method,
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'resolution=merge-duplicates'
+    },
+    body: body ? JSON.stringify(body) : null
+  });
+  if (!res.ok) throw new Error(await res.text());
+  const t = await res.text();
+  return t ? JSON.parse(t) : [];
+}
+
+// קבל פרמטרים מה-URL
+const params = new URLSearchParams(window.location.search);
+const orderId = params.get('id');
+const menuType = params.get('type') || 'all'; // regular / catering / all
+
+let M = [], nI = {}, aC = 'all', aMT = 'regular';
+let clientName = '', clientInfo = {};
+
+async function init() {
+  try {
+    // טען תפריט
+    const rows = await sbReq('GET', 'menu');
+    M = rows.map(r => r.data).filter(Boolean);
+
+    // אם יש orderId — טען פרטי הזמנה קיימת
+    if (orderId) {
+      const ords = await sbReq('GET', 'orders', null, `?id=eq.${orderId}`);
+      if (ords.length) {
+        const ord = ords[0].data;
+        clientInfo = ord;
+        clientName = ord.clientName || '';
+        // טען בחירות קיימות
+        (ord.items||[]).forEach(oi => {
+          nI[oi.menuId] = {qty: oi.qty, variantId: oi.variantId||null, removedIng: oi.removedIng||[], note: oi.note||''};
+        });
+      }
+    }
+    renderPage();
+  } catch(e) {
+    document.getElementById('main-content').innerHTML = '<div class="loading">שגיאה בטעינת התפריט. נסה שוב.</div>';
+  }
+}
+
+function cats() {
+  const items = aMT==='catering' ? M.filter(m=>m.menuType==='catering') : M.filter(m=>!m.menuType||m.menuType==='regular');
+  return [...new Set(items.map(m=>m.cat))];
+}
+
+function fmtQ(q,u) {
+  const iU=["יח'","חבילה","קופסא","צנצנת","קרטון","גביע","ראש","צרור"];
+  if(iU.includes(u)) return `${Math.ceil(q)} ${u}`;
+  if(u==='גרם') return q>=1000?`${+(q/1000).toFixed(2)} קג`:`${Math.ceil(q)} גרם`;
+  return `${Math.ceil(q)} ${u}`;
+}
+
+function renderPage() {
+  const greeting = clientName ? `שלום ${clientName}! ` : '';
+  document.getElementById('main-content').innerHTML = `
+    ${clientInfo.eventDate ? `
+    <div class="card" style="background:linear-gradient(135deg,#1A1208,#2C1F08);color:var(--gold3);">
+      <div style="font-family:var(--serif);font-style:italic;font-size:16px;color:var(--gold2);margin-bottom:6px;">${greeting}ברוכים הבאים!</div>
+      <div style="font-size:12px;">📅 תאריך אירוע: ${clientInfo.eventDate} ${clientInfo.eventTime?'⏰ '+clientInfo.eventTime:''}</div>
+      ${clientInfo.eventLocation?`<div style="font-size:12px;">📍 ${clientInfo.eventLocation}</div>`:''}
+    </div>` : `
+    <div class="card" style="text-align:center;">
+      <div style="font-family:var(--serif);font-style:italic;font-size:17px;color:var(--gold4);">${greeting}בחרו מהתפריט</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px;">בחרו פריטים וכמויות ושלחו הזמנה</div>
+    </div>`}
+
+    <div class="card">
+      <div class="tab-row">
+        <button class="tab-btn ${aMT==='regular'?'active':''}" onclick="swTab('regular')">🥐 תפריט רגיל</button>
+        <button class="tab-btn ${aMT==='catering'?'active':''}" onclick="swTab('catering')">🍽️ מגשי אירוח</button>
+      </div>
+      <div class="cfilt" id="cfilt"></div>
+      <div id="menu-items"></div>
+    </div>
+
+    <div id="sum-card" class="card" style="display:none;">
+      <div class="stitle">סיכום הבחירה שלך</div>
+      <div id="sum-content"></div>
+    </div>
+
+    <div style="padding:0 12px 20px;">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">הערה / בקשה מיוחדת (אופציונלי):</div>
+      <textarea id="client-note" style="width:100%;padding:10px;border:0.5px solid var(--border);border-radius:var(--radsm);font-size:13px;font-family:var(--body);min-height:60px;resize:vertical;" placeholder="לדוגמה: ללא גלוטן, אלרגיה לאגוזים..."></textarea>
+      <button class="btn btng" style="width:100%;margin-top:10px;font-size:15px;padding:14px;" onclick="submitOrder()">✦ שלח הזמנה ל-Y Sweet</button>
+    </div>
+  `;
+  renderMenuItems();
+}
+
+function swTab(t) {
+  aMT = t; aC = 'all';
+  renderPage();
+}
+
+function renderMenuItems() {
+  const items = aMT==='catering' ? M.filter(m=>m.menuType==='catering') : M.filter(m=>!m.menuType||m.menuType==='regular');
+  const filtered = aC==='all' ? items : items.filter(m=>m.cat===aC);
+  const allCats = [...new Set(items.map(m=>m.cat))];
+
+  document.getElementById('cfilt').innerHTML =
+    `<button class="cfilt-btn ${aC==='all'?'active':''}" onclick="fCat('all')">הכל</button>` +
+    allCats.map(c=>`<button class="cfilt-btn ${aC===c?'active':''}" onclick="fCat('${c.replace(/'/g,"\'")}')">  ${c}</button>`).join('');
+
+  document.getElementById('menu-items').innerHTML = filtered.map(item => {
+    const st = nI[item.id]; const qty = st?.qty||0;
+    const vLbl = st?.variantId&&item.variants ? item.variants.find(v=>v.id===st.variantId)?.name : '';
+    return `<div class="mic${qty>0?' hq':''}" id="mc${item.id}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div style="flex:1;padding-left:10px;">
+          <span class="ctag">${item.cat}</span>
+          ${item.hasVariants?`<span style="font-size:10px;padding:1px 5px;border-radius:8px;background:#E6F1FB;color:#185FA5;margin-right:3px;">וריאנטים</span>`:''}
+          <div class="min">${item.name}</div>
+          <div class="mii">${item.ing.map(i=>i.n).join(' · ')}</div>
+          ${vLbl?`<div style="font-size:11px;color:#185FA5;margin-top:2px;">✓ ${vLbl}</div>`:''}
+        </div>
+        <div style="text-align:left;flex-shrink:0;">
+          <div class="mip">₪${item.price} <span style="font-size:10px;font-weight:400;color:var(--muted);">/${item.unit}</span></div>
+          <div class="qc" style="margin-top:6px;justify-content:flex-end;">
+            <button class="qb" onclick="cQ('${item.id}',-1)">−</button>
+            <input type="number" min="0" value="${qty}" id="q${item.id}"
+              style="width:44px;text-align:center;font-size:13px;font-weight:600;color:var(--gold4);border:1px solid var(--gold);border-radius:var(--radsm);padding:2px 4px;"
+              onchange="setQ('${item.id}',this.value)" onclick="this.select()">
+            <button class="qb" onclick="cQ('${item.id}',1)">+</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  updSum();
+}
+
+function fCat(c) { aC=c; renderMenuItems(); }
+
+function cQ(id,d) {
+  const cur=nI[id]?.qty||0, nv=Math.max(0,cur+d);
+  if(nv===0) delete nI[id];
+  else { if(!nI[id]) nI[id]={qty:0,variantId:null,removedIng:[],note:''}; nI[id].qty=nv; }
+  const el=document.getElementById('q'+id); if(el) el.value=nv;
+  const card=document.getElementById('mc'+id);
+  if(card){nv>0?card.classList.add('hq'):card.classList.remove('hq');}
+  updSum();
+}
+function setQ(id,val) {
+  const nv=Math.max(0,parseInt(val)||0);
+  if(nv===0) delete nI[id];
+  else { if(!nI[id]) nI[id]={qty:0,variantId:null,removedIng:[],note:''}; nI[id].qty=nv; }
+  const card=document.getElementById('mc'+id);
+  if(card){nv>0?card.classList.add('hq'):card.classList.remove('hq');}
+  updSum();
+}
+function updSum() {
+  const card=document.getElementById('sum-card'); if(!card)return;
+  const keys=Object.keys(nI).filter(k=>nI[k].qty>0);
+  if(!keys.length){card.style.display='none';return;}
+  card.style.display='block';
+  let tot=0;
+  const rows=keys.map(k=>{
+    const m=M.find(m=>m.id===k);if(!m)return'';
+    const s=m.price*nI[k].qty;tot+=s;
+    return `<div class="srow"><span>${m.name} × ${nI[k].qty}</span><span>₪${s}</span></div>`;
+  }).join('');
+  document.getElementById('sum-content').innerHTML=`<div class="sbox">${rows}<div class="srow stot"><span>סה"כ משוער</span><span>₪${tot.toLocaleString()}</span></div></div>`;
+}
+
+async function submitOrder() {
+  const keys=Object.keys(nI).filter(k=>nI[k].qty>0);
+  if(!keys.length){alert('נא לבחור לפחות פריט אחד');return;}
+  const note=document.getElementById('client-note')?.value||'';
+  const items=keys.map(k=>({menuId:k,qty:nI[k].qty,variantId:nI[k].variantId||null,removedIng:[],note:''}));
+
+  try {
+    if(orderId) {
+      // עדכן הזמנה קיימת
+      const ords = await sbReq('GET','orders',null,`?id=eq.${orderId}`);
+      if(ords.length){
+        const ord=ords[0].data;
+        ord.items=items;
+        if(note) ord.clientNote=note;
+        ord.status='pending';
+        ord.clientUpdatedAt=new Date().toISOString();
+        await sbReq('POST','orders',{id:String(orderId),data:ord});
+      }
+    } else {
+      // הזמנה חדשה מלקוח
+      const newId='client_'+Date.now();
+      await sbReq('POST','orders',{id:newId,data:{
+        id:newId,clientName:clientName||'לקוח',eventDate:'',eventNotes:note,
+        status:'pending',items,source:'client',createdAt:new Date().toISOString()
+      }});
+    }
+    // הצג הצלחה
+    document.getElementById('main-content').innerHTML=`
+      <div class="success-box">
+        <div style="font-size:60px;margin-bottom:16px;">🎉</div>
+        <div style="font-family:var(--serif);font-style:italic;font-size:22px;color:var(--gold4);margin-bottom:8px;">ההזמנה נשלחה!</div>
+        <div style="font-size:14px;color:var(--muted);line-height:1.6;">תודה ${clientName?clientName:''}!<br>קיבלנו את הבקשה שלך.<br>יעל כהן תחזור אליך בהקדם לאישור.</div>
+        <div style="margin-top:20px;font-size:13px;color:var(--gold4);">Y Sweet מהדרין | 050-4940803</div>
+      </div>`;
+  } catch(e) {
+    alert('שגיאה בשליחה. נסה שוב.');
+    console.error(e);
+  }
+}
+
+init();
+</script>
+</body>
+</html>
