@@ -1293,24 +1293,51 @@ function rNew(){
   rNM();
 }
 function sndM(m){
-  const name=document.getElementById('nn').value.trim()||'לקוח יקר';
-  const txt=cats().map(c=>`✦ ${c}:\n`+M.filter(i=>i.cat===c).map(i=>{
-    let row=`  • ${i.name} — ₪${i.price} /${i.unit}`;
-    if(i.hasVariants&&i.variants) row+=`\n    טעמים: ${i.variants.map(v=>v.name).join(' / ')}`;
-    return row;
-  }).join('\n')).join('\n\n');
-  if(m==='wa'){const ph=(document.getElementById('np').value||'').replace(/[-\s]/g,'');window.open(`https://wa.me/${ph}?text=${encodeURIComponent(`שלום ${name}!\n\nתפריט Y Sweet 2026:\n\n${txt}\n\nנא לציין פריטים, כמויות וטעמים.\nיעל כהן 050-4940803`)}`);}
-  else {
-    const em = document.getElementById('ne').value;
-    if(!em){alert('נא למלא כתובת אימייל');return;}
-    // קצר את התפריט — רק קטגוריות וללא רכיבים
-    const shortTxt = cats().map(c =>
-      `✦ ${c}:\n` + M.filter(i=>i.cat===c).map(i=>`  • ${i.name} — ₪${i.price} /${i.unit}`).join('\n')
-    ).join('\n\n');
-    // חלק לשניים אם ארוך מדי
-    const body = `שלום ${name}!\n\nתפריט Y Sweet 2026:\n\n${shortTxt.slice(0,1500)}\n\nלפרטים נוספים: 050-4940803\nיעל כהן`;
-    window.open(`mailto:${em}?subject=${encodeURIComponent('תפריט Y Sweet 2026')}&body=${encodeURIComponent(body)}`);
+  const name = document.getElementById('nn').value.trim();
+  const phone = (document.getElementById('np').value||'').replace(/[-\s]/g,'');
+  const email = document.getElementById('ne').value;
+
+  // שמור הזמנה זמנית ב-Supabase כדי ליצור קישור אישי
+  const tempId = 'order_' + Date.now();
+  const clientData = {
+    id: tempId,
+    clientName: name || 'לקוח',
+    clientPhone: document.getElementById('np').value,
+    clientEmail: email,
+    eventDate: document.getElementById('nd').value,
+    eventTime: document.getElementById('nt').value,
+    eventLocation: document.getElementById('nloc').value,
+    eventNotes: document.getElementById('no').value,
+    status: 'sent',
+    items: [],
+    source: 'link',
+    createdAt: new Date().toISOString()
+  };
+
+  // שמור ל-Supabase
+  fbSave('orders', tempId, clientData);
+  ords.push(clientData);
+  renderCal();
+
+  const orderLink = BASE_URL + '/order.html?id=' + tempId;
+  const greeting = name ? 'שלום ' + name + '!' : 'שלום!';
+  const msg = greeting + '\n\n' +
+    '✦ Y Sweet מהדרין — תפריט 2026\n\n' +
+    'לצפייה בתפריט ובחירת פריטים, לחצו על הקישור:\n' +
+    orderLink + '\n\n' +
+    'ניתן לבחור פריטים וכמויות ולשלוח ישירות דרך הדף.\n\n' +
+    'לכל שאלה: יעל כהן | 050-4940803';
+
+  if(m==='wa'){
+    if(!phone){alert('נא למלא מספר טלפון');return;}
+    window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg));
+  } else {
+    if(!email){alert('נא למלא כתובת אימייל');return;}
+    const subject = encodeURIComponent('תפריט Y Sweet 2026');
+    const body = encodeURIComponent(msg);
+    window.open('mailto:' + email + '?subject=' + subject + '&body=' + body);
   }
+  toast('✦ התפריט נשלח — נוצרה הזמנה זמנית');
 }
 
 // ════════════════════════════════════════════════════════════
