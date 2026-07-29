@@ -1005,6 +1005,42 @@ function requestNotifPermission(){
   }
 }
 
+function checkNewOrders(){
+  // בדוק הזמנות חדשות מלקוחות
+  window._fb.loadCol('orders').then(freshOrds => {
+    if(!freshOrds) return;
+    const newClientOrds = freshOrds.filter(o =>
+      o && o.source === 'client' &&
+      o.status === 'pending' &&
+      !ords.find(existing => String(existing.id) === String(o.id) && existing.status === 'pending')
+    );
+    newClientOrds.forEach(o => {
+      // עדכן את הרשימה המקומית
+      const idx = ords.findIndex(x => String(x.id) === String(o.id));
+      if(idx >= 0) ords[idx] = o; else ords.push(o);
+      // הצג התראה
+      document.getElementById('alert-text').textContent =
+        '📬 התקבלה הזמנה חדשה מ-' + (o.clientName||'לקוח') + '!\nלחץ על הזמנות לצפייה.';
+      document.getElementById('aov').style.display='flex';
+      try {
+        const ctx=new(window.AudioContext||window.webkitAudioContext)();
+        [0,200,400].forEach(dl=>{
+          const osc=ctx.createOscillator(),g=ctx.createGain();
+          osc.connect(g);g.connect(ctx.destination);
+          osc.frequency.value=660;
+          g.gain.setValueAtTime(0.3,ctx.currentTime+dl/1000);
+          g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+dl/1000+0.3);
+          osc.start(ctx.currentTime+dl/1000);osc.stop(ctx.currentTime+dl/1000+0.3);
+        });
+      } catch(e){}
+    });
+    if(newClientOrds.length > 0) { rO(); renderCal(); }
+  }).catch(()=>{});
+}
+
+// בדוק הזמנות חדשות כל 2 דקות
+setInterval(checkNewOrders, 120000);
+
 function checkReminders(){
   const now=new Date();
   const ds=now.toISOString().slice(0,10);
@@ -1338,6 +1374,14 @@ function sndM(m){
     window.open('mailto:' + email + '?subject=' + subject + '&body=' + body);
   }
   toast('✦ התפריט נשלח — נוצרה הזמנה זמנית');
+  // נקה את הטופס ועבור לדף הזמנות
+  setTimeout(()=>{
+    rNew(); // ניקוי הטופס
+    document.querySelector('.nb').click(); // מעבר ללוח שנה
+    // עבור להזמנות
+    const ordBtn = document.querySelectorAll('.nb')[1];
+    if(ordBtn) ordBtn.click();
+  }, 1000);
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1662,7 +1706,7 @@ function aItem(){
 // ORDER DETAILS
 // ════════════════════════════════════════════════════════════
 function vO(id){
-  const o=ords.find(o=>String(o.id)===String(id));if(!o)return;
+  const o=getOrd(id)||ords.find(o=>String(o.id)===String(id));if(!o)return;
   const ss=['draft','pending','sent','confirmed','done'];
   const lines=o.items.map(oi=>{
     const m=M.find(m=>m.id===oi.menuId);if(!m)return'';
@@ -1693,7 +1737,7 @@ function vO(id){
 // EDIT & DELETE ORDER
 // ════════════════════════════════════════
 function delOrd(id){
-  const o=ords.find(o=>String(o.id)===String(id));if(!o)return;
+  const o=getOrd(id)||ords.find(o=>String(o.id)===String(id));if(!o)return;
   if(!confirm(`למחוק את ההזמנה של ${o.clientName}?\nפעולה זו לא ניתנת לביטול!`))return;
   ords=ords.filter(o=>String(o.id)!==String(id));
   window._fb.delDoc('orders',id);
@@ -1701,7 +1745,7 @@ function delOrd(id){
 }
 
 function editOrd(id){
-  const o=ords.find(o=>String(o.id)===String(id));if(!o)return;
+  const o=getOrd(id)||ords.find(o=>String(o.id)===String(id));if(!o)return;
   // populate new order form with existing data
   document.getElementById('nn').value=o.clientName||'';
   document.getElementById('nd').value=o.eventDate||'';
@@ -1747,15 +1791,23 @@ function editOrd(id){
   toast('✏️ ערוך את ההזמנה ולחץ שמור');
 }
 
+
+function getOrdId(el) {
+  return el.dataset ? el.dataset.id : String(el);
+}
+function getOrd(el) {
+  const id = getOrdId(el);
+  return ords.find(o => String(o.id) === String(id));
+}
 function sCnf(id){
-  const o=ords.find(o=>String(o.id)===String(id));if(!o)return;
+  const o=getOrd(id)||ords.find(o=>String(o.id)===String(id));if(!o)return;
   const confirmLink = `${BASE_URL}/confirm.html?id=${o.id}`;
   const ph=(o.clientPhone||'').replace(/[-\s]/g,'');
   const msg=`שלום ${o.clientName}! 🌟\n\n✦ הזמנתך אושרה על ידי Y Sweet מהדרין!\n\n📅 תאריך: ${o.eventDate}${o.eventTime?' ⏰ '+o.eventTime:''}\n${o.eventLocation?'📍 '+o.eventLocation+'\n':''}\n💰 סה"כ לתשלום: ₪${oT(o).toLocaleString()}\n\n👇 לצפייה בפרטי ההזמנה המלאים ואישור:\n${confirmLink}\n\nY Sweet מהדרין | יעל כהן | 050-4940803`;
   window.open(`https://wa.me/${ph}?text=${encodeURIComponent(msg)}`,'_blank');
 }
 function sCML(id){
-  const o=ords.find(o=>String(o.id)===String(id));if(!o)return;
+  const o=getOrd(id)||ords.find(o=>String(o.id)===String(id));if(!o)return;
   if(!o.clientEmail){alert('לא הוזנה כתובת אימייל ללקוח זה');return;}
   const confirmLink = `${BASE_URL}/confirm.html?id=${o.id}`;
   const lines=o.items.map(oi=>{
@@ -1803,7 +1855,7 @@ ${delL}`,
   );
 }
 function cSt(id){
-  const o=ords.find(o=>String(o.id)===String(id));if(!o)return;
+  const o=getOrd(id)||ords.find(o=>String(o.id)===String(id));if(!o)return;
   const ss=['draft','pending','sent','confirmed','done'];
   sMod(`<div>
     <button class="cbtn" onclick="cMod()">×</button>
@@ -1812,7 +1864,7 @@ function cSt(id){
   </div>`);
 }
 function sSt(id,s){
-  const o=ords.find(o=>String(o.id)===String(id));
+  const o=ords.find(o=>String(o.id)===String(id)) || ords.find(o=>String(o.id)===String(typeof id==='object'?id.dataset?.id:id));
   if(o){o.status=s;fbSave('orders',o.id,o);}
   cMod();rO();renderCal();
 }
