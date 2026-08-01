@@ -2,6 +2,17 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Y Sweet">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#1A1208">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+  <link rel="shortcut icon" href="icon-192.png">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Y Sweet — מערכת ניהול הזמנות</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,700&family=Assistant:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -1101,11 +1112,11 @@ function rO(){
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <div class="octot">₪${tot.toLocaleString()}</div>
           <div class="row" style="gap:5px;">
-            <button class="btn btns btnwa" onclick="sCnf(${JSON.stringify(o.id)})">📱 אישור</button>
-            <button class="btn btns" onclick="vO(${JSON.stringify(o.id)})">פרטים</button>
-            <button class="btn btns" onclick="cSt(${JSON.stringify(o.id)})">סטטוס</button>
-            <button class="btn btns" style="background:#E6F1FB;color:#185FA5;border-color:#B5D4F4;" onclick="editOrd(${JSON.stringify(o.id)})">✏️ עריכה</button>
-            <button class="btn btns btnd" onclick="delOrd(${JSON.stringify(o.id)})">🗑</button>
+            <button class="btn btns btnwa" onclick="sCnf('${o.id}')">📱 אישור</button>
+            <button class="btn btns" onclick="vO('${o.id}')">פרטים</button>
+            <button class="btn btns" onclick="cSt('${o.id}')">סטטוס</button>
+            <button class="btn btns" style="background:#E6F1FB;color:#185FA5;border-color:#B5D4F4;" onclick="editOrd('${o.id}')">✏️ עריכה</button>
+            <button class="btn btns btnd" onclick="delOrd('${o.id}')">🗑</button>
           </div>
         </div>
       </div>
@@ -1706,7 +1717,7 @@ function aItem(){
 // ORDER DETAILS
 // ════════════════════════════════════════════════════════════
 function vO(id){
-  const o=getOrd(id)||ords.find(o=>String(o.id)===String(id));if(!o)return;
+  const o=findOrd(id);if(!o)return;
   const ss=['draft','pending','sent','confirmed','done'];
   const lines=o.items.map(oi=>{
     const m=M.find(m=>m.id===oi.menuId);if(!m)return'';
@@ -1737,7 +1748,7 @@ function vO(id){
 // EDIT & DELETE ORDER
 // ════════════════════════════════════════
 function delOrd(id){
-  const o=getOrd(id)||ords.find(o=>String(o.id)===String(id));if(!o)return;
+  const o=findOrd(id);if(!o)return;
   if(!confirm(`למחוק את ההזמנה של ${o.clientName}?\nפעולה זו לא ניתנת לביטול!`))return;
   ords=ords.filter(o=>String(o.id)!==String(id));
   window._fb.delDoc('orders',id);
@@ -1745,7 +1756,7 @@ function delOrd(id){
 }
 
 function editOrd(id){
-  const o=getOrd(id)||ords.find(o=>String(o.id)===String(id));if(!o)return;
+  const o=findOrd(id);if(!o)return;
   // populate new order form with existing data
   document.getElementById('nn').value=o.clientName||'';
   document.getElementById('nd').value=o.eventDate||'';
@@ -1799,15 +1810,21 @@ function getOrd(el) {
   const id = getOrdId(el);
   return ords.find(o => String(o.id) === String(id));
 }
+
+// פונקציית עזר — מחפש הזמנה לפי id
+function findOrd(id) {
+  const sid = String(id);
+  return ords.find(o => String(o.id) === sid);
+}
 function sCnf(id){
-  const o=getOrd(id)||ords.find(o=>String(o.id)===String(id));if(!o)return;
+  const o=findOrd(id);if(!o)return;
   const confirmLink = `${BASE_URL}/confirm.html?id=${o.id}`;
   const ph=(o.clientPhone||'').replace(/[-\s]/g,'');
   const msg=`שלום ${o.clientName}! 🌟\n\n✦ הזמנתך אושרה על ידי Y Sweet מהדרין!\n\n📅 תאריך: ${o.eventDate}${o.eventTime?' ⏰ '+o.eventTime:''}\n${o.eventLocation?'📍 '+o.eventLocation+'\n':''}\n💰 סה"כ לתשלום: ₪${oT(o).toLocaleString()}\n\n👇 לצפייה בפרטי ההזמנה המלאים ואישור:\n${confirmLink}\n\nY Sweet מהדרין | יעל כהן | 050-4940803`;
   window.open(`https://wa.me/${ph}?text=${encodeURIComponent(msg)}`,'_blank');
 }
 function sCML(id){
-  const o=getOrd(id)||ords.find(o=>String(o.id)===String(id));if(!o)return;
+  const o=findOrd(id);if(!o)return;
   if(!o.clientEmail){alert('לא הוזנה כתובת אימייל ללקוח זה');return;}
   const confirmLink = `${BASE_URL}/confirm.html?id=${o.id}`;
   const lines=o.items.map(oi=>{
@@ -1855,7 +1872,7 @@ ${delL}`,
   );
 }
 function cSt(id){
-  const o=getOrd(id)||ords.find(o=>String(o.id)===String(id));if(!o)return;
+  const o=findOrd(id);if(!o)return;
   const ss=['draft','pending','sent','confirmed','done'];
   sMod(`<div>
     <button class="cbtn" onclick="cMod()">×</button>
