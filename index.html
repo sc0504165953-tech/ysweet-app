@@ -385,6 +385,13 @@ document.addEventListener('DOMContentLoaded', boot);
     <div class="fg"><label>מקום האירוע</label><input id="nloc" type="text" placeholder="אולם, כתובת..."></div>
     <div class="fg"><label>אימייל</label><input id="ne" type="email" placeholder="email@example.com"></div>
     <div class="fg"><label>סוג אירוע / הערות</label><textarea id="no" placeholder="בר מצווה, חתונה, ברית..."></textarea></div>
+    <div class="fg">
+      <label>סוג תפריט לשליחה</label>
+      <select id="send-menu-type" style="margin-bottom:8px;">
+        <option value="regular">🥐 תפריט רגיל</option>
+        <option value="catering">🍽️ מגשי אירוח</option>
+      </select>
+    </div>
     <div class="row">
       <button class="btn btnwa btns" onclick="sndM('wa')">📱 שלח תפריט</button>
       <button class="btn btnml btns" onclick="sndM('ml')">✉️ שלח תפריט</button>
@@ -1338,7 +1345,8 @@ function rNew(){
 }
 function sndM(m){
   const name = document.getElementById('nn').value.trim();
-  const phone = (document.getElementById('np').value||'').replace(/[-\s]/g,'');
+  const rawPhone=(document.getElementById('np').value||'').replace(/[-\s]/g,'');
+  const phone=rawPhone.startsWith('0')?'972'+rawPhone.slice(1):rawPhone.startsWith('972')?rawPhone:rawPhone;
   const email = document.getElementById('ne').value;
 
   // שמור הזמנה זמנית ב-Supabase כדי ליצור קישור אישי
@@ -1353,6 +1361,7 @@ function sndM(m){
     eventLocation: document.getElementById('nloc').value,
     eventNotes: document.getElementById('no').value,
     status: 'sent',
+    menuType: menuTypeToSend,
     items: [],
     source: 'link',
     createdAt: new Date().toISOString()
@@ -1816,56 +1825,36 @@ function findOrd(id){
 function sCnf(id){
   const o=findOrd(id);if(!o)return;
   const confirmLink = `${BASE_URL}/confirm.html?id=${o.id}`;
-  const ph=(o.clientPhone||'').replace(/[-\s]/g,'');
+  const rawPh=(o.clientPhone||'').replace(/[-\s]/g,'');
+  const ph=rawPh.startsWith('0')?'972'+rawPh.slice(1):rawPh.startsWith('972')?rawPh:rawPh;
   const msg=`שלום ${o.clientName}! 🌟\n\n✦ הזמנתך אושרה על ידי Y Sweet מהדרין!\n\n📅 תאריך: ${o.eventDate}${o.eventTime?' ⏰ '+o.eventTime:''}\n${o.eventLocation?'📍 '+o.eventLocation+'\n':''}\n💰 סה"כ לתשלום: ₪${oT(o).toLocaleString()}\n\n👇 לצפייה בפרטי ההזמנה המלאים ואישור:\n${confirmLink}\n\nY Sweet מהדרין | יעל כהן | 050-4940803`;
   window.open(`https://wa.me/${ph}?text=${encodeURIComponent(msg)}`,'_blank');
 }
 function sCML(id){
   const o=findOrd(id);if(!o)return;
   if(!o.clientEmail){alert('לא הוזנה כתובת אימייל ללקוח זה');return;}
-  const confirmLink = `${BASE_URL}/confirm.html?id=${o.id}`;
-  const lines=o.items.map(oi=>{
+  const confirmLink = BASE_URL + '/confirm.html?id=' + String(o.id);
+  const lines = (o.items||[]).map(oi=>{
     const m=M.find(m=>m.id===oi.menuId);if(!m)return'';
     let lbl=m.name;
     const v=oi.variantId&&m.variants?m.variants.find(v=>v.id===oi.variantId):null;
-    if(v)lbl+=` (${v.name})`;
-    const rem=oi.removedIng?.length?` — ללא ${oi.removedIng.join(', ')}`:'' ;
-    return`• ${lbl}: ${oi.qty} ${m.unit}${rem}`;
+    if(v) lbl+=' ('+v.name+')';
+    const rem=oi.removedIng&&oi.removedIng.length?' — ללא '+oi.removedIng.join(', '):'';
+    return '• '+lbl+': '+oi.qty+' '+m.unit+rem;
   }).filter(Boolean).join('\n');
-  const svcL=SERVICES_DEF.filter(s=>o.services?.[s.id]?.active)
-    .map(s=>`• ${s.icon} ${s.label}: ₪${o.services[s.id].price||0}`).join('\n');
-  const delL=o.delivery?.price>0
-    ? `משלוח: ₪${o.delivery.price}${o.delivery.note?' — '+o.delivery.note:''}`
-    : 'משלוח: חינם';
-  const subject = `אישור הזמנה Y Sweet — ${o.eventDate}`;
-  const body = [
-    `שלום ${o.clientName}!`,
-    '',
-    `אישור הזמנה לתאריך ${o.eventDate}${o.eventTime?' בשעה '+o.eventTime:''}`,
-    o.eventLocation ? `מיקום: ${o.eventLocation}` : '',
-    '',
-    'פרטי ההזמנה:',
-    lines,
-    svcL ? `
-שירותי עריכה:
-${svcL}` : '',
-    `
-${delL}`,
-    '',
-    `סה"כ לתשלום: ₪${oT(o).toLocaleString()}`,
-    '',
-    'נא לאשר קבלת ההזמנה.',
-    'Y Sweet מהדרין — יעל כהן',
-    'טל: 050-4940803'
-  ].filter(l=>l!==null).join('\n');
-
-  // בדוק אורך — אם ארוך מדי קצר
-  const confirmSection = `\n\n👇 לצפייה בפרטי ההזמנה המלאים ואישור:\n${confirmLink}`;
-  const bodyWithLink = body + confirmSection;
-  const finalBody = bodyWithLink.length > 1800 ? bodyWithLink.slice(0,1800) + '...' : bodyWithLink;
+  const tot = oT(o);
+  const subject = 'אישור הזמנה Y Sweet — ' + (o.eventDate||'');
+  const body = 'שלום ' + o.clientName + '!\n\n' +
+    'אישור הזמנה לתאריך ' + (o.eventDate||'') + (o.eventTime?' בשעה '+o.eventTime:'') + '\n' +
+    (o.eventLocation?'מיקום: '+o.eventLocation+'\n':'') +
+    '\nפרטי ההזמנה:\n' + lines.slice(0,800) +
+    '\n\nסה"כ לתשלום: ₪' + tot.toLocaleString() +
+    '\n\nלצפייה ואישור ההזמנה המלאה:\n' + confirmLink +
+    '\n\nY Sweet מהדרין — יעל כהן | 050-4940803';
   window.open(
-    `mailto:${o.clientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(finalBody)}`,
-    '_blank'
+    'mailto:' + o.clientEmail +
+    '?subject=' + encodeURIComponent(subject) +
+    '&body=' + encodeURIComponent(body)
   );
 }
 function cSt(id){
