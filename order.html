@@ -165,9 +165,8 @@ function renderPage() {
     </div>`}
 
     <div class="card">
-      <div class="tab-row">
-        <button id="tab-regular" class="tab-btn ${aMT==='regular'?'active':''}" onclick="swTab('regular')">🥐 תפריט רגיל</button>
-        <button id="tab-catering" class="tab-btn ${aMT==='catering'?'active':''}" onclick="swTab('catering')">🍽️ מגשי אירוח</button>
+      <div style="text-align:center;padding:8px 14px;background:var(--gold3);border-radius:var(--radsm);margin-bottom:10px;font-weight:600;color:var(--gold4);font-size:14px;">
+        ${aMT==='catering'?'🍽️ תפריט מגשי אירוח':'🥐 תפריט רגיל'}
       </div>
       <div class="cfilt" id="cfilt"></div>
       <div id="menu-items"></div>
