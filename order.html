@@ -105,7 +105,10 @@ const params = new URLSearchParams(window.location.search);
 const orderId = params.get('id');
 const menuType = params.get('type') || 'all'; // regular / catering / all
 
-let M = [], nI = {}, aC = 'all', aMT = 'regular';
+let M = [], nI = {}, aC = 'all';
+// קרא סוג תפריט מה-URL
+const urlParams = new URLSearchParams(window.location.search);
+let aMT = urlParams.get('type') || 'regular';
 let clientName = '', clientInfo = {};
 
 async function init() {
@@ -147,6 +150,19 @@ function fmtQ(q,u) {
 
 function renderPage() {
   const greeting = clientName ? `שלום ${clientName}! ` : '';
+  // עדכן טאבים לפי סוג תפריט שנבחר
+  setTimeout(()=>{
+    const tabR = document.getElementById('tab-regular');
+    const tabC = document.getElementById('tab-catering');
+    if(tabR && tabC){
+      if(aMT === 'catering'){
+        tabC.style.background='linear-gradient(135deg,var(--gold),var(--gold2))';
+        tabC.style.color='var(--dark)';tabC.style.fontWeight='600';
+        tabR.style.background='transparent';tabR.style.color='var(--muted)';tabR.style.fontWeight='500';
+      }
+    }
+  }, 100);
+
   document.getElementById('main-content').innerHTML = `
     ${clientInfo.eventDate ? `
     <div class="card" style="background:linear-gradient(135deg,#1A1208,#2C1F08);color:var(--gold3);">
@@ -161,8 +177,8 @@ function renderPage() {
 
     <div class="card">
       <div class="tab-row">
-        <button class="tab-btn ${aMT==='regular'?'active':''}" onclick="swTab('regular')">🥐 תפריט רגיל</button>
-        <button class="tab-btn ${aMT==='catering'?'active':''}" onclick="swTab('catering')">🍽️ מגשי אירוח</button>
+        <button id="tab-regular" class="tab-btn ${aMT==='regular'?'active':''}" onclick="swTab('regular')">🥐 תפריט רגיל</button>
+        <button id="tab-catering" class="tab-btn ${aMT==='catering'?'active':''}" onclick="swTab('catering')">🍽️ מגשי אירוח</button>
       </div>
       <div class="cfilt" id="cfilt"></div>
       <div id="menu-items"></div>
