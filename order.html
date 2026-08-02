@@ -108,7 +108,9 @@ const menuType = params.get('type') || 'all'; // regular / catering / all
 let M = [], nI = {}, aC = 'all';
 // קרא סוג תפריט מה-URL
 const urlParams = new URLSearchParams(window.location.search);
-let aMT = urlParams.get('type') || 'regular';
+const typeFromUrl = urlParams.get('type');
+let aMT = (typeFromUrl === 'catering' || typeFromUrl === 'regular') ? typeFromUrl : 'regular';
+console.log('Menu type from URL:', typeFromUrl, '=> aMT:', aMT);
 let clientName = '', clientInfo = {};
 
 async function init() {
@@ -150,19 +152,6 @@ function fmtQ(q,u) {
 
 function renderPage() {
   const greeting = clientName ? `שלום ${clientName}! ` : '';
-  // עדכן טאבים לפי סוג תפריט שנבחר
-  setTimeout(()=>{
-    const tabR = document.getElementById('tab-regular');
-    const tabC = document.getElementById('tab-catering');
-    if(tabR && tabC){
-      if(aMT === 'catering'){
-        tabC.style.background='linear-gradient(135deg,var(--gold),var(--gold2))';
-        tabC.style.color='var(--dark)';tabC.style.fontWeight='600';
-        tabR.style.background='transparent';tabR.style.color='var(--muted)';tabR.style.fontWeight='500';
-      }
-    }
-  }, 100);
-
   document.getElementById('main-content').innerHTML = `
     ${clientInfo.eventDate ? `
     <div class="card" style="background:linear-gradient(135deg,#1A1208,#2C1F08);color:var(--gold3);">
