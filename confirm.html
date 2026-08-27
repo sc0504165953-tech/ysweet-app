@@ -207,7 +207,10 @@ async function sendAnswers(){
   ord.pendingQuestions=[];
   await sbReq('POST','orders',{id:String(orderId),data:ord});
   alert('תשובותיך נשלחו! תודה.');
-  location.reload();
+  // עדכן תצוגה בלי reload
+  document.querySelectorAll('[onclick="sendAnswers()"]').forEach(b=>b.disabled=true);
+  document.querySelectorAll('#content input').forEach(i=>i.disabled=true);
+  document.querySelector('[onclick="sendAnswers()"]') && (document.querySelector('[onclick="sendAnswers()"]').textContent='✅ נשלח!');
 }
 init();
 </script>
