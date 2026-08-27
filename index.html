@@ -890,7 +890,7 @@ function sb(s){const c={draft:'bg-g',pending:'bg-g',sent:'bg-b',confirmed:'bg-v'
 function oT(o){
   let t=o.items.reduce((s,oi)=>{const m=M.find(m=>m.id===oi.menuId);return s+(m?m.price*oi.qty:0);},0);
   if(o.services) SERVICES_DEF.forEach(s=>{if(o.services[s.id]?.active) t+=parseFloat(o.services[s.id].price)||0;});
-  if(o.delivery?.price) t+=parseFloat(o.delivery.price)||0;
+  if(o.delivery?.price && parseFloat(o.delivery.price)>0) t+=parseFloat(o.delivery.price);
   return t;
 }
 function fmtQ(q,u){
@@ -1112,7 +1112,7 @@ function rO(){
   el.innerHTML=ords.sort((a,b)=>a.eventDate>b.eventDate?1:-1).map(o=>{
     const tot=oT(o);
     const svcTags=SERVICES_DEF.filter(s=>o.services?.[s.id]?.active).map(s=>`<span class="extra-tag">${s.icon} ${s.label}</span>`).join('');
-    const delTag=o.delivery?.price>0?`<span class="extra-tag">🚚 ₪${o.delivery.price}</span>`:o.delivery?.price===0?`<span class="extra-tag">🚚 חינם</span>`:'';
+    const delTag=o.delivery?.price>0?`<span class="extra-tag">🚚 ₪${o.delivery.price}</span>`:'';
     const prev=o.items.slice(0,2).map(oi=>{const m=M.find(m=>m.id===oi.menuId);if(!m)return'';let n=m.name.slice(0,16);const v=oi.variantId&&m.variants?m.variants.find(v=>v.id===oi.variantId):null;if(v)n+=` (${v.name})`;return n+` ×${oi.qty}`;}).join(' | ')+(o.items.length>2?` +${o.items.length-2}`:'');
     return`<div class="ocard">
       <div class="ochead">
@@ -1319,7 +1319,7 @@ function uS(){
   const dp=parseFloat(document.getElementById('delivery-price')?.value)||0;
   const dn=document.getElementById('delivery-note')?.value||'';
   tot+=dp;
-  const delRow=`<div class="srow"><span>🚚 משלוח${dn?' — '+dn:''}</span><span>${dp>0?'₪'+dp:'חינם'}</span></div>`;
+  const delRow=dp>0?`<div class="srow"><span>🚚 משלוח${dn?' — '+dn:''}</span><span>₪${dp}</span></div>`:'';
   document.getElementById('nsum').innerHTML=`<div class="sbox">${rows}${svcRows}${delRow}<div class="srow stot"><span>סה"כ</span><span>₪${tot.toLocaleString()}</span></div></div>`;
 }
 function svOrd(){
@@ -1692,6 +1692,9 @@ function dItem(id){
   fbDel('menu',id);cMod();rMP();
 }
 function showAddItem(){
+  const cateringItems = M.filter(m=>m.menuType==='catering');
+  const cateringOpts = '<option value="">-- ללא קישור --</option>' +
+    cateringItems.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
   sMod(`<div>
     <button class="cbtn" onclick="cMod()">×</button>
     <div class="mtitle">✦ הוספת פריט חדש</div>
@@ -1707,31 +1710,24 @@ function showAddItem(){
       <div class="fg"><label>יחידה</label><input id="ai-u" placeholder="למגש..."></div>
     </div>
     <div class="fg"><label>סוג תפריט</label>
-      <select id="ai-mt" onchange="document.getElementById('link-catering-div').style.display=this.value==='regular'?'block':'none';populateCateringLink();">
+      <select id="ai-mt" onchange="document.getElementById('link-div').style.display=this.value==='regular'?'block':'none';">
         <option value="regular">🥐 תפריט רגיל</option>
         <option value="catering">🍽️ מגשי אירוח</option>
       </select>
     </div>
-    <div class="fg" id="link-catering-div" style="display:none;">
+    <div class="fg" id="link-div" style="display:block;">
       <label>מקושר לפריט מגשי אירוח (לחישוב רכיבים)</label>
-      <select id="ai-link">
-        <option value="">-- ללא קישור --</option>
-      </select>
+      <select id="ai-link">${cateringOpts}</select>
     </div>
     <div class="fg"><label>האם יש וריאנטים?</label>
-      <select id="ai-hv"><option value="no">לא — פריט רגיל</option><option value="yes">כן — יש טעמים / מגדלים</option></select>
+      <select id="ai-hv"><option value="no">לא — פריט רגיל</option><option value="yes">כן — יש טעמים</option></select>
     </div>
     <div class="fg"><label>רכיבי בסיס</label>
-      <div id="ni-e"><div class="ing-row">
-        <input type="number" step="0.1" class="iq" placeholder="כמות">
-        <input type="text" class="iu" placeholder="יחידה">
-        <input type="text" placeholder="שם רכיב">
-        <button class="di" onclick="this.parentElement.remove()">×</button>
-      </div></div>
+      <div id="ni-e"></div>
       <button class="btn btns" style="margin-top:5px;" onclick="aNIR()">+ רכיב</button>
     </div>
     <button class="btn btng" style="width:100%;margin-top:10px;" onclick="aItem()">✦ הוסף לתפריט</button>
-  </div>`);
+  </div>\`);
 }
 function aNIR(){document.getElementById('ni-e').appendChild(makeIngRow('','יח\'',''));}
 function aItem(){
@@ -1774,7 +1770,7 @@ function vO(id){
     return`<div class="srow"><span>${lbl.slice(0,26)} × ${oi.qty}${rem}</span><span>₪${m.price*oi.qty}</span></div>`;
   }).join('');
   const svcLines=SERVICES_DEF.filter(s=>o.services?.[s.id]?.active).map(s=>`<div class="srow"><span>${s.icon} ${s.label}</span><span>₪${o.services[s.id].price||0}</span></div>`).join('');
-  const delLine=o.delivery?`<div class="srow"><span>🚚 משלוח${o.delivery.note?' — '+o.delivery.note:''}</span><span>${o.delivery.price>0?'₪'+o.delivery.price:'חינם'}</span></div>`:'';
+  const delLine=o.delivery&&o.delivery.price>0?`<div class="srow"><span>🚚 משלוח${o.delivery.note?' — '+o.delivery.note:''}</span><span>₪${o.delivery.price}</span></div>`:'';
   sMod(`<div>
     <button class="cbtn" onclick="cMod()">×</button>
     <div class="mtitle">הזמנה — ${o.clientName}</div>
