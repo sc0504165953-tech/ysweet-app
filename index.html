@@ -1418,6 +1418,27 @@ function rSP(){
     ords.filter(o=>o.status!=='done').map(o=>`<option value="${o.id}">${o.clientName} — ${o.eventDate}</option>`).join('');
   rShop();rChkList('staples');rChkList('disposables');
 }
+
+function shortName(name) {
+  // הסר מילים כמו "מגש", "קטן", "גדול", "יח'", מספרים, סוגריים
+  let s = name
+    .replace(/מגש\s*/g, '')
+    .replace(/\d+\s*יח[''׳]?/g, '')
+    .replace(/\d+\s*סמ['"׳]?/g, '')
+    .replace(/\d+\s*ס['"׳]?מ/g, '')
+    .replace(/קוטר\s*\d+/g, '')
+    .replace(/כ-\d+/g, '')
+    .replace(/\d+x\d+/g, '')
+    .replace(/\d+\s*ליטר/g, '')
+    .replace(/\d+\s*קג/g, '')
+    .replace(/\d+\s*גר['"׳]?/g, '')
+    .replace(/קטן|גדול|בינוני|ענק/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  // קצר ל-3 מילים ראשונות
+  const words = s.split(' ').filter(w=>w.length>1);
+  return words.slice(0,3).join(' ');
+}
 function rShop(){
   const v=selectedOrdIds||'all';
   const os=v==='all'?ords.filter(o=>o.status!=='done'):ords.filter(o=>Array.isArray(v)&&v.includes(String(o.id)));
@@ -1764,9 +1785,13 @@ function vO(id){
       📞 ${o.clientPhone||'—'}<br>${o.eventNotes||''}
     </div>
     <div class="sbox">${lines}${svcLines}${delLine}<div class="srow stot"><span>סה"כ</span><span>₪${oT(o).toLocaleString()}</span></div></div>
-    <div class="row" style="gap:6px;margin-top:12px;">
-      <button class="btn btns btnwa" onclick="sCnf('${o.id}');cMod()">📱 אישור וואטסאפ</button>
-      <button class="btn btns btnml" onclick="sCML('${o.id}');cMod()">✉️ אישור מייל</button>
+    <div class="fg" style="margin-top:10px;">
+      <label style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;">❓ שאלות לבירור (אופציונלי — יופיע ללקוח בדף האישור)</label>
+      <textarea id="pending-q-${o.id}" style="width:100%;padding:8px;border:0.5px solid var(--border);border-radius:var(--radsm);font-size:12px;min-height:60px;font-family:var(--body);" placeholder="לדוגמה: האם המשלוח לתל אביב? / מה שעת ההגעה המדויקת?">${(o.pendingQuestions||[]).join('\n')}</textarea>
+    </div>
+    <div class="row" style="gap:6px;margin-top:8px;">
+      <button class="btn btns btnwa" onclick="saveAndSendCnf('${o.id}','wa');cMod()">📱 אישור וואטסאפ</button>
+      <button class="btn btns btnml" onclick="saveAndSendCnf('${o.id}','ml');cMod()">✉️ אישור מייל</button>
     </div>
   </div>`);
 }
@@ -1866,26 +1891,6 @@ function populateCateringLink(selectedId) {
   });
 }
 
-function shortName(name) {
-  // הסר מילים כמו "מגש", "קטן", "גדול", "יח'", מספרים, סוגריים
-  let s = name
-    .replace(/מגש\s*/g, '')
-    .replace(/\d+\s*יח[''׳]?/g, '')
-    .replace(/\d+\s*סמ['"׳]?/g, '')
-    .replace(/\d+\s*ס['"׳]?מ/g, '')
-    .replace(/קוטר\s*\d+/g, '')
-    .replace(/כ-\d+/g, '')
-    .replace(/\d+x\d+/g, '')
-    .replace(/\d+\s*ליטר/g, '')
-    .replace(/\d+\s*קג/g, '')
-    .replace(/\d+\s*גר['"׳]?/g, '')
-    .replace(/קטן|גדול|בינוני|ענק/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-  // קצר ל-3 מילים ראשונות
-  const words = s.split(' ').filter(w=>w.length>1);
-  return words.slice(0,3).join(' ');
-}
 
 let selectedOrdIds = 'all';
 
@@ -1945,6 +1950,18 @@ function genShoppingPage(){
       <button class="btn btns btnwa" onclick="window.open('https://wa.me/?text='+encodeURIComponent('רשימת קניות Y Sweet:\n${link}'))">📱 שלח</button>
     </div>
   </div>`);
+}
+
+function saveAndSendCnf(id, method) {
+  const o = findOrd(id); if(!o) return;
+  const textarea = document.getElementById('pending-q-' + id);
+  if(textarea) {
+    const questions = textarea.value.trim().split('\n').filter(q=>q.trim());
+    o.pendingQuestions = questions;
+    fbSave('orders', o.id, o);
+  }
+  if(method === 'wa') sCnf(id);
+  else sCML(id);
 }
 function findOrd(id){
   const s = String(id);
