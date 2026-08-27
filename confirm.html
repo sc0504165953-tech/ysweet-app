@@ -98,7 +98,7 @@ async function init() {
       sbReq('GET','menu')
     ]);
     if (!ordRows.length) { document.getElementById('content').innerHTML='<div class="loading">הזמנה לא נמצאה</div>'; return; }
-    const ord = ordRows[0].data;
+    ord = ordRows[0].data;
     const M = menuRows.map(r=>r.data).filter(Boolean);
     renderConfirm(ord, M);
   } catch(e) {
@@ -149,6 +149,17 @@ function renderConfirm(ord, M) {
 
     ${ord.eventNotes?`<div class="card"><div style="font-size:13px;color:var(--muted);">📝 ${ord.eventNotes}</div></div>`:''}
 
+    ${ord.pendingQuestions&&ord.pendingQuestions.length?`
+    <div style="background:#FFF8E7;border:1.5px solid var(--gold);border-radius:var(--radsm);padding:14px;margin:0 0 12px;">
+      <div style="font-weight:600;color:var(--gold4);margin-bottom:8px;">❓ פרטים לבירור — נא לענות:</div>
+      ${ord.pendingQuestions.map((q,i)=>`
+        <div style="margin-bottom:10px;">
+          <div style="font-size:13px;font-weight:500;">❓ ${q}</div>
+          <input type="text" id="ans_${i}" style="width:100%;padding:7px;border:0.5px solid var(--border);border-radius:6px;font-size:13px;margin-top:4px;" placeholder="תשובתך...">
+        </div>`).join('')}
+      <button onclick="sendAnswers()" style="width:100%;padding:10px;background:linear-gradient(135deg,#C9A84C,#E8C97A);border:none;border-radius:8px;font-weight:600;cursor:pointer;font-family:var(--body);">שלח תשובות ✓</button>
+    </div>`:''}
+
     ${isConfirmed
       ? `<div class="confirmed-box">
           <div style="font-size:40px;margin-bottom:10px;">✅</div>
@@ -187,6 +198,16 @@ async function confirmOrder() {
   } catch(e) { alert('שגיאה. נסה שוב.'); if(btn){btn.textContent='✅ אני מאשר/ת את ההזמנה';btn.disabled=false;} }
 }
 
+let ord = null;
+async function sendAnswers(){
+  const questions=ord.pendingQuestions||[];
+  const answers=questions.map((q,i)=>({question:q,answer:document.getElementById('ans_'+i)?.value||''}));
+  ord.clientAnswers=answers;
+  ord.pendingQuestions=[];
+  await sbReq('POST','orders',{id:String(orderId),data:ord});
+  alert('תשובותיך נשלחו! תודה.');
+  location.reload();
+}
 init();
 </script>
 </body>

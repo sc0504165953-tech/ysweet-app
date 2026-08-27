@@ -437,9 +437,19 @@ document.addEventListener('DOMContentLoaded', boot);
 
 <!-- SHOPPING -->
 <div id="page-shop" class="page">
-  <div class="row" style="margin-bottom:10px;gap:8px;">
-    <div class="fg" style="flex:1;margin:0;"><select id="ssel" onchange="rShop()"><option value="all">כל ההזמנות הפעילות</option></select></div>
-    <button class="btn btnwa" onclick="showSendMod()">📱 שלח</button>
+  <div class="row" style="margin-bottom:6px;gap:8px;">
+    <button class="btn btng btns" onclick="toggleOrdPicker()" style="flex:1;">📋 בחר הזמנות</button>
+    <button class="btn btnwa btns" onclick="showSendMod()">📱 שלח</button>
+    <button class="btn btns" style="background:#E6F1FB;color:#185FA5;" onclick="genShoppingPage()">🔗 צור קישור קניות</button>
+  </div>
+  <div id="ord-picker" style="display:none;background:#fff;border:0.5px solid var(--gold);border-radius:var(--radsm);padding:10px;margin-bottom:10px;">
+    <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">סמן את ההזמנות לחישוב:</div>
+    <div id="ord-checkboxes"></div>
+    <div class="row" style="margin-top:8px;gap:6px;">
+      <button class="btn btns" onclick="selAllOrds(true)">בחר הכל</button>
+      <button class="btn btns" onclick="selAllOrds(false)">נקה</button>
+      <button class="btn btng btns" onclick="applyOrdSelection()">✓ עדכן</button>
+    </div>
   </div>
   <!-- חלק א -->
   <div class="card"><div class="stitle">📦 מוצרים לפי הזמנות</div><div id="scon"></div></div>
@@ -758,11 +768,12 @@ const DEFAULT_DISPOSABLES = [
 ];
 
 const SERVICES_DEF = [
-  {id:'buffet',  icon:'🍽️', label:'עריכת בופה'},
-  {id:'bar',     icon:'🍸', label:'עריכת בר'},
-  {id:'coffee',  icon:'☕', label:'עמדת קפה'},
-  {id:'tables',  icon:'🌸', label:'עריכת שולחנות'},
-  {id:'package', icon:'🎁', label:'מארז'},
+  {id:'buffet',     icon:'🍽️', label:'עריכת בופה'},
+  {id:'colddrinks', icon:'🥤', label:'שתיה קרה'},
+  {id:'coffee',     icon:'☕', label:'עמדת קפה'},
+  {id:'tables',     icon:'🌸', label:'עריכת שולחנות'},
+  {id:'package',    icon:'🎁', label:'מארז'},
+  {id:'disposable', icon:'🍴', label:'חד פעמי לאירוע'},
 ];
 
 // ════════════════════════════════════════════════════════════
@@ -905,6 +916,7 @@ function calcShop(ordList){
         tot[k].qty+=i.q*oi.qty;
         let src=mi.name;if(oi.variantId&&mi.variants){const v=mi.variants.find(v=>v.id===oi.variantId);if(v)src+=` (${v.name})`;}
         tot[k].sources.add(src);
+        if(!tot[k].shortName) tot[k].shortName = shortName(mi.name);
       });
     });
   });
@@ -1407,8 +1419,8 @@ function rSP(){
   rShop();rChkList('staples');rChkList('disposables');
 }
 function rShop(){
-  const v=document.getElementById('ssel').value;
-  const os=v==='all'?ords.filter(o=>o.status!=='done'):ords.filter(o=>String(o.id)===String(v));
+  const v=selectedOrdIds||'all';
+  const os=v==='all'?ords.filter(o=>o.status!=='done'):ords.filter(o=>Array.isArray(v)&&v.includes(String(o.id)));
   const tot=calcShop(os);
   const el=document.getElementById('scon');
   if(!Object.keys(tot).length){el.innerHTML='<div style="padding:1rem;color:var(--muted);font-size:13px;">אין הזמנות פעילות</div>';return;}
@@ -1416,7 +1428,7 @@ function rShop(){
     <div class="shi">
       <div style="flex:1;">
         <div style="font-weight:700;font-size:15px;color:var(--text);">${v.name}</div>
-        <div class="shi-src" style="font-size:11px;color:var(--muted);">📦 ${[...v.sources].join(' · ')}</div>
+        <div class="shi-src" style="font-size:11px;color:var(--muted);">📦 ${[...v.sources].map(s=>shortName(s)).join(' · ')}</div>
       </div>
       <div class="shi-qty" style="font-size:15px;font-weight:700;">${fmtQ(v.qty,v.unit)}</div>
     </div>`).join('');
@@ -1624,7 +1636,7 @@ function showEditItem(id){
     </div>
   </div>`);
 }
-function aIR(){const d=document.createElement('div');d.className='ing-row';d.innerHTML=`<input type="number" step="0.1" class="iq" placeholder="כמות"><input type="text" class="iu" placeholder="יחידה"><input type="text" placeholder="שם"><button class="di" onclick="this.parentElement.remove()">×</button>`;document.getElementById('ie').appendChild(d);}
+function aIR(){document.getElementById('ie').appendChild(makeIngRow('','יח\'',''));}
 function syncIngByName(updatedItem) {
   // מצא פריטים עם אותו שם בתפריט השני וסנכרן רכיבים
   M.forEach(item => {
@@ -1643,8 +1655,10 @@ function sEdit(id){
   item.unit=document.getElementById('ei-u').value.trim()||item.unit;
   item.ing=[];
   document.querySelectorAll('#ie .ing-row').forEach(r=>{
-    const ins=r.querySelectorAll('input');
-    const q=parseFloat(ins[0].value)||0,u=ins[1].value.trim(),n=ins[2].value.trim();
+    const qEl=r.querySelector('.iq'),uEl=r.querySelector('.iu'),nEl=r.querySelectorAll('input')[1];
+    const q=parseFloat(qEl?.value)||0;
+    const u=(uEl?.tagName==='SELECT'?uEl.value:uEl?.value)||'יח\'';
+    const n=nEl?.value.trim()||'';
     if(n)item.ing.push({n,q,u});
   });
   fbSave('menu',item.id,item);
@@ -1672,9 +1686,15 @@ function showAddItem(){
       <div class="fg"><label>יחידה</label><input id="ai-u" placeholder="למגש..."></div>
     </div>
     <div class="fg"><label>סוג תפריט</label>
-      <select id="ai-mt">
+      <select id="ai-mt" onchange="document.getElementById('link-catering-div').style.display=this.value==='regular'?'block':'none';populateCateringLink();">
         <option value="regular">🥐 תפריט רגיל</option>
         <option value="catering">🍽️ מגשי אירוח</option>
+      </select>
+    </div>
+    <div class="fg" id="link-catering-div" style="display:none;">
+      <label>מקושר לפריט מגשי אירוח (לחישוב רכיבים)</label>
+      <select id="ai-link">
+        <option value="">-- ללא קישור --</option>
       </select>
     </div>
     <div class="fg"><label>האם יש וריאנטים?</label>
@@ -1692,7 +1712,7 @@ function showAddItem(){
     <button class="btn btng" style="width:100%;margin-top:10px;" onclick="aItem()">✦ הוסף לתפריט</button>
   </div>`);
 }
-function aNIR(){const d=document.createElement('div');d.className='ing-row';d.innerHTML=`<input type="number" step="0.1" class="iq" placeholder="כמות"><input type="text" class="iu" placeholder="יחידה"><input type="text" placeholder="שם"><button class="di" onclick="this.parentElement.remove()">×</button>`;document.getElementById('ni-e').appendChild(d);}
+function aNIR(){document.getElementById('ni-e').appendChild(makeIngRow('','יח\'',''));}
 function aItem(){
   const name=document.getElementById('ai-n').value.trim();
   const catS=document.getElementById('ai-c').value,catN=document.getElementById('ai-nc').value.trim();
@@ -1703,12 +1723,16 @@ function aItem(){
   if(!name||!cat||!price){alert('נא למלא שם, קטגוריה ומחיר');return;}
   const ing=[];
   document.querySelectorAll('#ni-e .ing-row').forEach(r=>{
-    const ins=r.querySelectorAll('input');
-    const q=parseFloat(ins[0].value)||0,u=ins[1].value.trim(),n=ins[2].value.trim();
+    const qEl=r.querySelector('.iq'),uEl=r.querySelector('.iu'),nEl=r.querySelectorAll('input')[1];
+    const q=parseFloat(qEl?.value)||0;
+    const u=(uEl?.tagName==='SELECT'?uEl.value:uEl?.value)||'יח\'';
+    const n=nEl?.value.trim()||'';
     if(n)ing.push({n,q,u});
   });
   const mt=document.getElementById('ai-mt')?.value||'regular';
+  const linkedId=document.getElementById('ai-link')?.value||'';
   const newItem={id:'m'+Date.now(),cat,name,price,unit,ing,menuType:mt};
+  if(linkedId) newItem.linkedCateringId=linkedId;
   if(hasV){newItem.hasVariants=true;newItem.variants=[{id:'v'+Date.now(),name:'טעם 1',extraIng:[]}];}
   M.push(newItem);fbSave('menu',newItem.id,newItem);
   cMod();rMP();
@@ -1814,6 +1838,114 @@ function getOrd(el) {
   return ords.find(o => String(o.id) === String(id));
 }
 
+
+function makeIngRow(q, u, n) {
+  const units = ["יח'","חבילה","גרם","קג","מל","ליטר","קרטון","צנצנת","קופסא","גביע","ראש","צרור","בקבוק","שקית","מנה","כף","כפית","אחר"];
+  const opts = units.map(unit => `<option value="${unit}"${unit===u?' selected':''}>${unit}</option>`).join('');
+  const d = document.createElement('div');
+  d.className = 'ing-row';
+  d.innerHTML = `
+    <input type="number" step="0.1" class="iq" ${q?'value="'+q+'"':'placeholder="כמות"'}>
+    <select class="iu" style="flex:0 0 80px;font-size:12px;padding:5px 4px;">${opts}</select>
+    <input type="text" ${n?'value="'+n+'"':'placeholder="שם רכיב"'}>
+    <button class="di" onclick="this.parentElement.remove()">×</button>
+  `;
+  return d;
+}
+
+function populateCateringLink(selectedId) {
+  const sel = document.getElementById('ai-link');
+  if(!sel) return;
+  sel.innerHTML = '<option value="">-- ללא קישור --</option>';
+  M.filter(m=>m.menuType==='catering').forEach(m=>{
+    const opt = document.createElement('option');
+    opt.value = m.id;
+    opt.textContent = m.name;
+    if(m.id === selectedId) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function shortName(name) {
+  // הסר מילים כמו "מגש", "קטן", "גדול", "יח'", מספרים, סוגריים
+  let s = name
+    .replace(/מגש\s*/g, '')
+    .replace(/\d+\s*יח[''׳]?/g, '')
+    .replace(/\d+\s*סמ['"׳]?/g, '')
+    .replace(/\d+\s*ס['"׳]?מ/g, '')
+    .replace(/קוטר\s*\d+/g, '')
+    .replace(/כ-\d+/g, '')
+    .replace(/\d+x\d+/g, '')
+    .replace(/\d+\s*ליטר/g, '')
+    .replace(/\d+\s*קג/g, '')
+    .replace(/\d+\s*גר['"׳]?/g, '')
+    .replace(/קטן|גדול|בינוני|ענק/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  // קצר ל-3 מילים ראשונות
+  const words = s.split(' ').filter(w=>w.length>1);
+  return words.slice(0,3).join(' ');
+}
+
+let selectedOrdIds = 'all';
+
+function toggleOrdPicker(){
+  const p = document.getElementById('ord-picker');
+  if(p.style.display === 'none'){
+    p.style.display = 'block';
+    renderOrdCheckboxes();
+  } else {
+    p.style.display = 'none';
+  }
+}
+
+function renderOrdCheckboxes(){
+  const activeOrds = ords.filter(o=>o.status!=='done');
+  document.getElementById('ord-checkboxes').innerHTML = activeOrds.map(o=>{
+    const checked = selectedOrdIds==='all' || (Array.isArray(selectedOrdIds) && selectedOrdIds.includes(String(o.id)));
+    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--border);">
+      <input type="checkbox" id="och_${o.id}" ${checked?'checked':''} style="width:16px;height:16px;">
+      <label for="och_${o.id}" style="font-size:13px;cursor:pointer;flex:1;">
+        ${o.clientName} — ${o.eventDate||''}
+        <span style="font-size:11px;color:var(--muted);"> ₪${oT(o).toLocaleString()}</span>
+      </label>
+    </div>`;
+  }).join('');
+}
+
+function selAllOrds(sel){
+  document.querySelectorAll('#ord-checkboxes input[type=checkbox]').forEach(cb=>cb.checked=sel);
+}
+
+function applyOrdSelection(){
+  const checked = [...document.querySelectorAll('#ord-checkboxes input[type=checkbox]:checked')].map(cb=>cb.id.replace('och_',''));
+  selectedOrdIds = checked.length === ords.filter(o=>o.status!=='done').length ? 'all' : checked;
+  document.getElementById('ord-picker').style.display='none';
+  rShop();
+}
+
+function genShoppingPage(){
+  const v = selectedOrdIds;
+  const os = v==='all' ? ords.filter(o=>o.status!=='done') : ords.filter(o=>Array.isArray(v)&&v.includes(String(o.id)));
+  const tot = calcShop(os);
+  const chkS = staples.filter(s=>s.checked);
+  const chkD = disposables.filter(s=>s.checked);
+  // שמור נתוני קניות ב-Supabase
+  const shopId = 'shop_' + Date.now();
+  const shopData = {id:shopId, items:Object.entries(tot).map(([k,v])=>({...v,sources:[...v.sources],key:k,done:false})), staples:chkS, disposables:chkD, createdAt:new Date().toISOString()};
+  fbSave('shopping', shopId, shopData);
+  const link = BASE_URL + '/shopping.html?id=' + shopId;
+  sMod(`<div>
+    <button class="cbtn" onclick="cMod()">×</button>
+    <div class="mtitle">🔗 קישור רשימת קניות</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">שלח את הקישור לפלאפון וסמן פריטים בזמן הקנייה:</div>
+    <div style="background:var(--bg2);border-radius:var(--radsm);padding:12px;font-size:12px;word-break:break-all;border:0.5px solid var(--border);">${link}</div>
+    <div class="row" style="gap:8px;margin-top:12px;justify-content:flex-end;">
+      <button class="btn btns" onclick="navigator.clipboard.writeText('${link}').then(()=>toast('✦ הקישור הועתק'))">📋 העתק</button>
+      <button class="btn btns btnwa" onclick="window.open('https://wa.me/?text='+encodeURIComponent('רשימת קניות Y Sweet:\n${link}'))">📱 שלח</button>
+    </div>
+  </div>`);
+}
 function findOrd(id){
   const s = String(id);
   return ords.find(o => String(o.id) === s);

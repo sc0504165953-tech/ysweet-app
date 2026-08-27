@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Y Sweet - רשימת קניות</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,700&family=Assistant:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;direction:rtl;}
+:root{--gold:#C9A84C;--gold2:#E8C97A;--gold3:#F5E6C0;--gold4:#8B6914;--dark:#1A1208;--bg:#FAFAF8;--bg2:#F4F0E8;--text:#1C1C1C;--muted:#6B6560;--border:rgba(0,0,0,0.1);--rad:14px;--radsm:8px;--serif:"Playfair Display",Georgia,serif;--body:"Assistant",sans-serif;}
+body{font-family:var(--body);background:var(--bg);color:var(--text);}
+.app{max-width:680px;margin:0 auto;padding-bottom:40px;}
+.header{background:linear-gradient(160deg,#1A1208,#2C1F08);border-radius:0 0 var(--rad) var(--rad);margin-bottom:16px;box-shadow:0 4px 24px rgba(0,0,0,0.25);}
+.hi{display:flex;align-items:center;gap:14px;padding:14px 18px;}
+.hbrand{font-family:var(--serif);font-size:18px;font-style:italic;color:var(--gold2);}
+.htag{font-size:11px;color:var(--gold);}
+.gold-line{height:2px;background:linear-gradient(90deg,transparent,var(--gold),var(--gold2),var(--gold),transparent);}
+.card{background:#fff;border:0.5px solid var(--border);border-radius:var(--rad);padding:14px 18px;margin:0 12px 12px;box-shadow:0 2px 8px rgba(0,0,0,0.04);}
+.stitle{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--gold4);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.stitle::after{content:"";flex:1;height:0.5px;background:linear-gradient(90deg,var(--gold),transparent);}
+.shop-item{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:var(--radsm);margin-bottom:7px;background:var(--bg2);border:1.5px solid var(--border);cursor:pointer;transition:all 0.15s;}
+.shop-item.done{background:#F0F9F0;border-color:#4CAF50;}
+.shop-item.done .iname{text-decoration:line-through;color:var(--muted);}
+.scb{width:22px;height:22px;border:2px solid var(--gold);border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;background:#fff;color:var(--gold4);}
+.shop-item.done .scb{background:#4CAF50;border-color:#4CAF50;color:#fff;}
+.iname{font-size:14px;font-weight:600;flex:1;}
+.isub{font-size:11px;color:var(--muted);margin-top:1px;}
+.iqty{font-size:14px;font-weight:700;color:var(--gold4);white-space:nowrap;}
+.progress{background:var(--bg2);border-radius:20px;height:8px;margin-bottom:12px;overflow:hidden;}
+.pbar{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:20px;transition:width 0.3s;}
+.loading{text-align:center;padding:3rem;color:var(--muted);font-family:var(--serif);font-style:italic;}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="header">
+  <div class="hi">
+    <svg width="50" height="50" viewBox="0 0 50 50">
+      <defs>
+        <linearGradient id="rg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#E8C97A"/><stop offset="50%" stop-color="#C9A84C"/><stop offset="100%" stop-color="#8B6914"/>
+        </linearGradient>
+        <linearGradient id="yg" x1="0%" y1="0%" x2="60%" y2="100%">
+          <stop offset="0%" stop-color="#8B6914"/><stop offset="50%" stop-color="#C9A84C"/><stop offset="100%" stop-color="#7A5C10"/>
+        </linearGradient>
+      </defs>
+      <circle cx="25" cy="25" r="24" fill="url(#rg)"/>
+      <circle cx="25" cy="25" r="20" fill="#FFFDF5"/>
+      <text x="25" y="33" text-anchor="middle" font-family="Georgia,serif" font-size="28" font-weight="700" font-style="italic" fill="url(#yg)">Y</text>
+    </svg>
+    <div>
+      <div class="hbrand">Y Sweet - רשימת קניות</div>
+      <div class="htag">לחץ על פריט לסימון כנקנה</div>
+    </div>
+  </div>
+  <div class="gold-line"></div>
+</div>
+<div id="content"><div class="loading">טוען רשימה...</div></div>
+</div>
+<script>
+const SB_URL="https://xbjyzcdxfsjnqjqjwsxs.supabase.co";
+const SB_KEY="sb_publishable_SSlTKx-prnpBZ7KA56Fxdg_QOfNfr-z";
+async function sbReq(method,table,body,filter){
+  filter=filter||"";
+  const res=await fetch(SB_URL+"/rest/v1/"+table+filter,{
+    method:method,
+    headers:{"apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY,"Content-Type":"application/json","Prefer":"resolution=merge-duplicates"},
+    body:body?JSON.stringify(body):null
+  });
+  if(!res.ok)throw new Error(await res.text());
+  const t=await res.text();return t?JSON.parse(t):[];
+}
+const params=new URLSearchParams(window.location.search);
+const shopId=params.get("id");
+let shopData=null;
+
+function fmtQ(q,u){
+  var iU=["יח'","חבילה","קופסא","צנצנת","קרטון","גביע","ראש","צרור","בקבוק","שקית","מנה","כף","כפית"];
+  if(iU.indexOf(u)>=0)return Math.ceil(q)+" "+u;
+  if(u==="גרם")return q>=1000?+(q/1000).toFixed(2)+" קג":Math.ceil(q)+" גרם";
+  if(u==="קג")return+(+q).toFixed(2)+" קג";
+  return Math.ceil(q)+" "+u;
+}
+function shortName(name){
+  return name.replace(/מגש\s*/g,"").replace(/\d+\s*יח.?/g,"").replace(/קטן|גדול|בינוני/g,"").replace(/\s+/g," ").trim().split(" ").filter(function(w){return w.length>1;}).slice(0,3).join(" ");
+}
+
+async function init(){
+  if(!shopId){document.getElementById("content").innerHTML="<div class='loading'>קישור לא תקין</div>";return;}
+  try{
+    var rows=await sbReq("GET","shopping",null,"?id=eq."+shopId);
+    if(!rows.length){document.getElementById("content").innerHTML="<div class='loading'>הרשימה לא נמצאה</div>";return;}
+    shopData=rows[0].data;
+    render();
+  }catch(e){document.getElementById("content").innerHTML="<div class='loading'>שגיאה בטעינה</div>";}
+}
+
+function render(){
+  var items=shopData.items||[];
+  var total=items.length;
+  var done=items.filter(function(i){return i.done;}).length;
+  var pct=total?Math.round(done/total*100):0;
+  var html="<div style='padding:0 12px 8px;'>";
+  html+="<div style='display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px;'><span>"+done+" מתוך "+total+" פריטים</span><span>"+pct+"%</span></div>";
+  html+="<div class='progress'><div class='pbar' style='width:"+pct+"%'></div></div></div>";
+  html+="<div class='card'><div class='stitle'>📦 מוצרים להזמנות</div>";
+  items.slice().sort(function(a,b){return a.done-b.done;}).forEach(function(item,i){
+    html+="<div class='shop-item "+(item.done?"done":"")+"' onclick='toggleItem("+i+")'>";
+    html+="<div class='scb'>"+(item.done?"✓":"")+"</div>";
+    html+="<div style='flex:1;'><div class='iname'>"+shortName(item.name)+"</div>";
+    var srcs=(item.sources||[]).map(function(s){return shortName(s);}).join(" · ");
+    html+="<div class='isub'>"+srcs+"</div></div>";
+    html+="<div class='iqty'>"+fmtQ(item.qty,item.unit)+"</div></div>";
+  });
+  html+="</div>";
+  var st=shopData.staples||[];
+  if(st.length){
+    html+="<div class='card'><div class='stitle'>🧂 מוצרי יסוד</div>";
+    st.forEach(function(s,i){
+      html+="<div class='shop-item "+(s.done?"done":"")+"' onclick='toggleStaple("+i+")'><div class='scb'>"+(s.done?"✓":"")+"</div><div class='iname'>"+s.name+"</div></div>";
+    });
+    html+="</div>";
+  }
+  var disp=shopData.disposables||[];
+  if(disp.length){
+    html+="<div class='card'><div class='stitle'>🍴 חד פעמי וציוד</div>";
+    disp.forEach(function(s,i){
+      html+="<div class='shop-item "+(s.done?"done":"")+"' onclick='toggleDisposable("+i+")'><div class='scb'>"+(s.done?"✓":"")+"</div><div class='iname'>"+s.name+"</div></div>";
+    });
+    html+="</div>";
+  }
+  html+="<div style='text-align:center;margin-top:8px;font-size:12px;color:var(--muted);padding:0 12px;'>Y Sweet מהדרין | יעל כהן | 050-4940803</div>";
+  document.getElementById("content").innerHTML=html;
+}
+
+async function save(){
+  await sbReq("POST","shopping",{id:shopId,data:shopData});
+}
+function toggleItem(i){shopData.items[i].done=!shopData.items[i].done;render();save();}
+function toggleStaple(i){shopData.staples[i].done=!shopData.staples[i].done;render();save();}
+function toggleDisposable(i){shopData.disposables[i].done=!shopData.disposables[i].done;render();save();}
+init();
+</script>
+</body>
+</html>
