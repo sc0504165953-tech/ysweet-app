@@ -66,15 +66,11 @@ const SUPABASE_KEY = 'sb_publishable_SSlTKx-prnpBZ7KA56Fxdg_QOfNfr-z';
 
 async function sbReq(method, table, body=null, filter='') {
   const url = `${SUPABASE_URL}/rest/v1/${table}${filter}`;
-  const controller = new AbortController();
-  const tid = setTimeout(()=>controller.abort(), 8000);
   const res = await fetch(url, {
-    signal: controller.signal,
     method,
     headers: {'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
     body: body ? JSON.stringify(body) : null
   });
-  clearTimeout(tid);
   if (!res.ok) throw new Error(await res.text());
   const t = await res.text();
   return t ? JSON.parse(t) : [];
@@ -97,23 +93,16 @@ async function init() {
     return;
   }
   try {
-    // timeout של 10 שניות
-    const controller = new AbortController();
-    const timeout = setTimeout(()=>controller.abort(), 10000);
-    const ordRows = await sbReq('GET','orders',null,`?id=eq.${orderId}`);
-    clearTimeout(timeout);
+    const [ordRows, menuRows] = await Promise.all([
+      sbReq('GET','orders',null,`?id=eq.${orderId}`),
+      sbReq('GET','menu')
+    ]);
     if (!ordRows.length) { document.getElementById('content').innerHTML='<div class="loading">הזמנה לא נמצאה</div>'; return; }
     ord = ordRows[0].data;
-    // טען תפריט בנפרד — לא חוסם אם נכשל
-    let M = [];
-    try {
-      const menuRows = await sbReq('GET','menu');
-      M = menuRows.map(r=>r.data).filter(Boolean);
-    } catch(me) { console.warn('menu load failed', me); }
+    const M = menuRows.map(r=>r.data).filter(Boolean);
     renderConfirm(ord, M);
   } catch(e) {
-    console.error('init error:', e);
-    document.getElementById('content').innerHTML='<div class="loading">שגיאה בטעינה — נסה שוב</div><div style="text-align:center;margin-top:16px;"><button onclick="init()" style="padding:10px 20px;background:#C9A84C;border:none;border-radius:8px;font-weight:600;cursor:pointer;">נסה שוב</button></div>';
+    document.getElementById('content').innerHTML='<div class="loading">שגיאה בטעינה</div>';
   }
 }
 
@@ -218,10 +207,7 @@ async function sendAnswers(){
   ord.pendingQuestions=[];
   await sbReq('POST','orders',{id:String(orderId),data:ord});
   alert('תשובותיך נשלחו! תודה.');
-  // עדכן תצוגה בלי reload
-  document.querySelectorAll('[onclick="sendAnswers()"]').forEach(b=>b.disabled=true);
-  document.querySelectorAll('#content input').forEach(i=>i.disabled=true);
-  document.querySelector('[onclick="sendAnswers()"]') && (document.querySelector('[onclick="sendAnswers()"]').textContent='✅ נשלח!');
+  location.reload();
 }
 init();
 </script>
